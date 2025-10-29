@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crimson Cipher - Videos</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg-pulse"></div>
+<header class="site-header">
+  <div class="brand">
+    <h1 class="logo">CRIMSON CIPHER</h1>
+    <div class="subtitle">Video Transmissions</div>
+  </div>
+  <nav class="nav">
+    <a class="nav-link" href="index.html">Home</a>
+    <a class="nav-link" href="storytime.html">StoryTime</a>
+    <a class="nav-link active" href="video.html">Videos</a>
+    <a class="nav-link" href="chatroom.html">Chatroom</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <h1 class="hero-title">Visual Chapters</h1>
+    <p class="lead">Each video decodes a piece of the story. Watch closely.</p>
+  </section>
+
+  <div class="grid-videos" id="video-grid"></div>
+</main>
+
+<footer class="site-footer">
+  If an if was a fifth, we'd all be drunk.
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7G9FFEZVFRx8Ml_H49tJTcMUbmOZYmQ4",
+  authDomain: "iaiwaf.firebaseapp.com",
+  projectId: "iaiwaf",
+  storageBucket: "iaiwaf.appspot.com",
+  messagingSenderId: "548868801867",
+  appId: "1:548868801867:web:a51be7e24ea9f1014d94ce"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function loadVideos() {
+  const q = query(collection(db, "videos"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+  const container = document.getElementById("video-grid");
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const div = document.createElement("div");
+    div.className = "video-card";
+    div.innerHTML = `
+      <video src="${data.url}" controls style="width:100%; border-radius:6px;"></video>
+      <h3>${data.title}</h3>
+    `;
+    container.appendChild(div);
+  });
+}
+loadVideos();
+</script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crimson Cipher | Voice Room</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-pulse"></div>
+  <header class="site-header">
+    <div class="brand">
+      <h1 class="logo">Crimson Cipher</h1>
+      <div class="subtitle">Voice Room</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link" href="storytime.html">StoryTime</a>
+      <a class="nav-link" href="video.html">Videos</a>
+      <a class="nav-link active" href="chatroom.html">Chatroom</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2 class="section-title">Voice Room (peer-to-peer)</h2>
+    <p class="lead">This is a lightweight WebRTC demo using Firebase Realtime Database for signaling. It's free and suitable for small rooms (2-4 people).</p>
+
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-top:18px;">
+      <button id="joinBtn" class="btn">Join Voice Room</button>
+      <button id="leaveBtn" class="btn" disabled>Leave</button>
+    </div>
+
+    <div id="peers" style="margin-top:18px;"></div>
+  </div>
+
+  <footer class="site-footer">
+    If an if was a fifth, we'd all be drunk.
+  </footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7G9FFEZVFRx8Ml_H49tJTcMUbmOZYmQ4",
+  authDomain: "iaiwaf.firebaseapp.com",
+  databaseURL: "https://iaiwaf-default-rtdb.firebaseio.com",
+  projectId: "iaiwaf",
+  storageBucket: "iaiwaf.appspot.com",
+  messagingSenderId: "548868801867",
+  appId: "1:548868801867:web:a51be7e24ea9f1014d94ce"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const SIGNALS = ref(db, 'voice_signals');
+
+let pc = null;
+let localStream = null;
+let mySignalKey = null;
+
+document.getElementById('joinBtn').onclick = async () => {
+  localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  pc = new RTCPeerConnection();
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  const audioEl = document.createElement('audio');
+  audioEl.autoplay = true;
+  pc.ontrack = (e) => {
+    audioEl.srcObject = e.streams[0];
+    document.getElementById('peers').appendChild(audioEl);
+  };
+
+  // create offer and push to Firebase
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  const signalRef = push(SIGNALS);
+  mySignalKey = signalRef.key;
+  await signalRef.set({ type: 'offer', sdp: offer.sdp });
+
+  // listen for answers
+  onChildAdded(SIGNALS, async (snap) => {
+    const data = snap.val();
+    if(data && data.type === 'answer' && snap.key !== mySignalKey){
+      const desc = { type: 'answer', sdp: data.sdp };
+      await pc.setRemoteDescription(desc);
+    }
+  });
+
+  document.getElementById('joinBtn').disabled = true;
+  document.getElementById('leaveBtn').disabled = false;
+};
+
+document.getElementById('leaveBtn').onclick = async () => {
+  if(localStream){
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  if(pc){
+    pc.close();
+    pc = null;
+  }
+  if(mySignalKey){
+    remove(ref(db, 'voice_signals/' + mySignalKey));
+    mySignalKey = null;
+  }
+  document.getElementById('joinBtn').disabled = false;
+  document.getElementById('leaveBtn').disabled = true;
+};
+</script>
+</body>
+</html>

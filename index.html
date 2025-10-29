@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crimson Cipher</title>
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="bg-pulse"></div>
+<header class="site-header">
+  <div class="brand">
+    <h1 class="logo">CRIMSON CIPHER</h1>
+    <div class="subtitle">Broadcasting from the Underground</div>
+  </div>
+  <nav class="nav">
+    <a class="nav-link active" href="index.html">Home</a>
+    <a class="nav-link" href="storytime.html">StoryTime</a>
+    <a class="nav-link" href="video.html">Videos</a>
+    <a class="nav-link" href="chatroom.html">Chatroom</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <h1 class="hero-title">Tonight’s Transmission</h1>
+    <p class="lead">Strange signals leak through the static. Tune in…</p>
+
+    <div class="tv-frame" id="tvFrame" style="width:860px; height:480px;">
+      <canvas id="tvCanvas" width="860" height="480"></canvas>
+      <div class="tv-overlay"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  If an if was a fifth, we'd all be drunk.
+</footer>
+
+<script>
+/*
+  TV faux-looping clips using Canvas.
+  There are no binary video files included — this creates short "clips"
+  and cycles them to simulate changing channels.
+*/
+const canvas = document.getElementById('tvCanvas');
+const ctx = canvas.getContext('2d');
+
+const clips = [
+  { title: "COMMERCIAL • RED RAIN", draw: drawRedRain, duration: 3000 },
+  { title: "ANNOUNCEMENT • 3AM", draw: drawGlitchText, duration: 3000 },
+  { title: "SILENT STATIC", draw: drawStatic, duration: 2500 },
+  { title: "PROMO • THE CIPHER", draw: drawPromo, duration: 3500 }
+];
+
+let clipIndex = 0;
+let clipStart = performance.now();
+
+function drawStatic(t) {
+  const w = canvas.width, h = canvas.height;
+  const imgData = ctx.createImageData(w, h);
+  for (let i=0; i<imgData.data.length; i+=4) {
+    const v = Math.random() * 255 | 0;
+    imgData.data[i] = v;
+    imgData.data[i+1] = v;
+    imgData.data[i+2] = v;
+    imgData.data[i+3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function drawRedRain(t) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(138,3,3,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  for(let i=0;i<300;i++){
+    const x = Math.random()*canvas.width;
+    const y = (t/10 + i*20) % canvas.height;
+    ctx.fillRect(x, y, 2, 12);
+  }
+  ctx.fillStyle = 'rgba(138,3,3,0.9)';
+  ctx.font = '32px Orbitron, monospace';
+  ctx.fillText(clips[clipIndex].title, 20, canvas.height - 30);
+}
+
+function drawGlitchText(t) {
+  ctx.fillStyle = '#020202';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const txt = "3:00 AM • TRANSMISSION";
+  ctx.font = 'bold 42px Orbitron, monospace';
+  for(let i=0;i<5;i++){
+    ctx.fillStyle = `rgba(138,3,3,${0.2 + Math.random()*0.8})`;
+    ctx.fillText(txt, 40 + Math.random()*6, 120 + Math.random()*6);
+  }
+}
+
+function drawPromo(t) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(138,3,3,0.12)';
+  ctx.fillRect(40,40, canvas.width-80, canvas.height-80);
+  ctx.font = 'bold 48px Orbitron, monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillText("THE CIPHER", 120, 220);
+  ctx.font = '20px Share Tech Mono, monospace';
+  ctx.fillStyle = 'rgba(200,200,200,0.9)';
+  ctx.fillText("Decode nightly. Stay inside the signal.", 120, 260);
+}
+
+function tick(now){
+  const clip = clips[clipIndex];
+  clip.draw(now);
+  if(now - clipStart > clip.duration){
+    clipIndex = (clipIndex + 1) % clips.length;
+    clipStart = now;
+  }
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
