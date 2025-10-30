@@ -20,10 +20,6 @@ body{
   text-rendering:optimizeLegibility;
 }
 
-body {
-  text-align: center; /* Centers all inline and block text by default */
-
-}
 .bg-pulse{
   position:fixed;
   inset:0;
