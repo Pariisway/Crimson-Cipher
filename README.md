@@ -1,39 +1,28 @@
-# Crimson Cipher - Static Site Package (Final)
+Crimson Cipher — VHS cryptic clips package (v3)
 
-This package contains the Crimson Cipher static site (Home, StoryTime, Video, Chatroom) with a large styled retro TV on the homepage that cycles through cryptic news clips and static.
+This package includes the Crimson Cipher site plus detailed instructions to create distorted AI-anchor audio and embed it into short VHS-style video clips using free tools (TTS + ffmpeg).
 
-## What is included
-- `index.html` — Home page with TV loop (uses `scripts/main.js`)
-- `storytime.html` — Story posts page
-- `video.html` — Video listing page
-- `chatroom.html`, `chat-text.html`, `chat-voice.html` — Chatroom hub + placeholders
-- `styles/style.css` — CSS (Crimson Cipher / IAIWAF v2 theme)
-- `scripts/main.js` — JavaScript controlling the TV loop + mute button
-- `assets/clips/*.mp4` — placeholder clips (replace with real clips)
-- `assets/audio/*.mp3` — placeholder audio files (replace with real audio)
-- `assets/images/logo.png` — placeholder logo image
+Included:
+- index.html, storytime.html, video.html (with Ezoic placeholders)
+- styles/style.css
+- scripts/main.js (TV + mute behavior)
+- assets/clips/*.mp4 and assets/audio/*.mp3 — placeholders (replace with real files)
 
-## Notes on placeholders
-The `assets/clips` folder contains small placeholder `.mp4` files (single-byte placeholders). These are NOT real videos — replace them with real clips as described below.
+Suggested voice lines to generate (AI-distorted):
+1. "Authorities continue to deny the existence of the signal."
+2. "If you hear the tone... do not respond."
+3. "The voice is broadcasting from inside the wires."
+4. "You were never supposed to see this transmission."
 
-## Where to get royalty-free clips & audio
-- Use public domain / royalty-free sources such as **Pexels**, **Pixabay**, **Internet Archive**, or **Mixkit**.
-- Search for "TV static", "vintage news", "VHS glitch", or "broadcast" clips.
-- For audio, look for "white noise", "radio static", or "distorted voice" clips. Audacity can be used to mix voice + static.
+Quick ffmpeg recipe to make a clip from an image + audio:
+1) Create a base visual (tv_frame.jpg) — your TV screen image or title card
+2) Create distilled audio (cryptic1.mp3) using TTS + distortion
+3) Build clip:
+   ffmpeg -loop 1 -i tv_frame.jpg -i cryptic1.mp3 -c:v libx264 -t 10 -pix_fmt yuv420p -c:a aac -b:a 128k -shortest assets/clips/cryptic1.mp4
 
-## How to replace clips (quick guide)
-1. Upload or copy real MP4 clips into `assets/clips/` with names like `news1.mp4`, `news2.mp4`, `news3.mp4`, and `static.mp4` (static should be ~1s long).
-2. If you use different filenames, open `scripts/main.js` and update the `clips` array and `staticClip` path accordingly.
-3. Commit and push to GitHub. GitHub Pages will redeploy automatically.
+For VHS overlay/static, you can blend with a static loop:
+   ffmpeg -i base.mp4 -i static_overlay.mp4 -filter_complex "[0:v][1:v]blend=all_mode='overlay':all_opacity=0.12" -c:v libx264 -pix_fmt yuv420p vhs_visual.mp4
 
-## Customization
-- Change clip durations in `scripts/main.js` (`clipDuration`, `staticDuration` in ms).
-- Edit cryptic messages in the `randomMessage()` function in `scripts/main.js`.
-- Replace `styles/style.css` to tweak the TV bezel or scanline appearance.
+Replace placeholders in assets/clips/ and assets/audio/ with your real files, then push to GitHub.
 
-## Deploy
-- Push the folder contents to your `crimson-cipher` GitHub repo root and enable GitHub Pages (branch: `main`, folder: `/ (root)`).
-- Point your domain `iaiwaf.com` to GitHub Pages A-records and CNAME for `www` (if not already done).
-
----
-Done. Replace the placeholders with real clips and sounds to get the full experience.
+If you want me to generate the actual distorted audio files and package them into MP4s, say so and I'll prepare them for you.
