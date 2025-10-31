@@ -1,77 +1,64 @@
-/* scripts/main.js - controls the fake TV loop, static transitions, and mute button */
+// TV Video Player with creepy videos
+const tvPlayer = document.getElementById('tvPlayer');
+const muteBtn = document.getElementById('muteBtn');
 
-const clips = [
-  "assets/clips/news1.mp4",
-  "assets/clips/news2.mp4",
-  "assets/clips/news3.mp4"
+// List of creepy videos (you'll need to add these files to your assets/clips folder)
+const creepyVideos = [
+    'assets/clips/cryptic1.mp4',
+    'assets/clips/cryptic2.mp4', 
+    'assets/clips/cryptic3.mp4',
+    'assets/clips/cryptic4.mp4'
 ];
-const staticClip = "assets/clips/static.mp4";
-const clipDuration = 7000; // 7s per clip
-const staticDuration = 1200; // 1.2s static
 
-let tvVideoEl, muteBtn;
-let muted = false;
-
-function pickRandom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-async function playSequence(){
-  while(true){
-    const clip = pickRandom(clips);
-    tvVideoEl.src = clip;
-    tvVideoEl.play().catch(()=>{});
-    await wait(clipDuration);
-    // show static
-    tvVideoEl.src = staticClip;
-    tvVideoEl.play().catch(()=>{});
-    showOverlayMessage(randomMessage(), staticDuration);
-    await wait(staticDuration);
-  }
+// Function to get a random video
+function getRandomVideo() {
+    const randomIndex = Math.floor(Math.random() * creepyVideos.length);
+    return creepyVideos[randomIndex];
 }
 
-function wait(ms){ return new Promise(res=>setTimeout(res, ms)); }
-
-function randomMessage(){
-  const msgs = [
-    "THE SIGNAL IS BROKEN",
-    "AUTHORITIES DENY THE EXISTENCE OF THE SIGNAL",
-    "DO NOT LISTEN AFTER MIDNIGHT",
-    "NOBODY SPEAKS OF THE GRAY FLOOR",
-    "WAKE UP"
-  ];
-  return msgs[Math.floor(Math.random()*msgs.length)];
+// Initialize TV with random video
+function initTV() {
+    const randomVideo = getRandomVideo();
+    tvPlayer.src = randomVideo;
+    tvPlayer.load();
+    
+    // Add some glitch effects randomly
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            tvPlayer.style.filter = 'hue-rotate(90deg)';
+            setTimeout(() => {
+                tvPlayer.style.filter = 'none';
+            }, 100);
+        }
+    }, 3000);
 }
 
-function showOverlayMessage(text, duration){
-  const overlay = document.createElement('div');
-  overlay.style.position='absolute';
-  overlay.style.inset='0';
-  overlay.style.display='flex';
-  overlay.style.alignItems='center';
-  overlay.style.justifyContent='center';
-  overlay.style.pointerEvents='none';
-  overlay.style.color='rgba(255,255,255,0.95)';
-  overlay.style.fontFamily='Orbitron, monospace';
-  overlay.style.fontSize='28px';
-  overlay.style.textShadow='0 0 18px rgba(138,3,3,0.95)';
-  overlay.style.background='linear-gradient(rgba(0,0,0,0.0), rgba(0,0,0,0.0))';
-  overlay.innerText = text;
-  document.querySelector('.tv-bezel').appendChild(overlay);
-  setTimeout(()=>overlay.remove(), duration);
-}
+// Mute button functionality
+muteBtn.addEventListener('click', () => {
+    tvPlayer.muted = !tvPlayer.muted;
+    muteBtn.textContent = tvPlayer.muted ? 'SOUND OFF' : 'SOUND ON';
+    muteBtn.style.background = tvPlayer.muted ? '#ff0000' : '#2a0a0a';
+    muteBtn.style.color = tvPlayer.muted ? '#000' : '#ff0000';
+});
 
-function setup(){
-  tvVideoEl = document.getElementById('tvPlayer');
-  muteBtn = document.getElementById('muteBtn');
-  muted = false;
-  tvVideoEl.muted = muted;
-  muteBtn.addEventListener('click', ()=>{
-    muted = !muted;
-    tvVideoEl.muted = muted;
-    muteBtn.classList.toggle('muted', muted);
-    muteBtn.innerText = muted ? 'MUTED' : 'SOUND';
-  });
-  // start loop
-  playSequence();
-}
+// When video ends, play another random one
+tvPlayer.addEventListener('ended', () => {
+    const newVideo = getRandomVideo();
+    tvPlayer.src = newVideo;
+    tvPlayer.play();
+});
 
-window.addEventListener('DOMContentLoaded', setup);
+// Error handling for videos
+tvPlayer.addEventListener('error', (e) => {
+    console.error('Video error:', e);
+    // Fallback to a different video
+    setTimeout(() => {
+        const fallbackVideo = getRandomVideo();
+        if (fallbackVideo !== tvPlayer.src) {
+            tvPlayer.src = fallbackVideo;
+        }
+    }, 2000);
+});
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', initTV);
