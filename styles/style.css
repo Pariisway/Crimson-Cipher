@@ -309,4 +309,20 @@ body {
     .grid-videos {
         grid-template-columns: 1fr;
     }
+    .video-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 40px;
 }
+
+.video-container iframe {
+  width: 80%;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+  border: 5px solid crimson;
+  border-radius: 12px;
+  box-shadow: 0 0 25px rgba(220, 20, 60, 0.7);
+}
+
+} 
