@@ -7,6 +7,7 @@ if (window.location.pathname.endsWith('index.html') || window.location.pathname.
     if (tvPlayer && muteBtn) {
         // List of creepy videos - using free online videos that work immediately
         const creepyVideos = [
+            <a href="https://pixabay.com/users/simovina-7130282/">simovina</a> from <a href="https://pixabay.com/">Pixabay</a>
             'https://assets.mixkit.co/videos/preview/mixkit-abstract-red-and-orange-flow-34560-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-red-light-flickering-34558-large.mp4',
             'https://assets.mixkit.co/videos/preview/mixkit-a-blurred-bokeh-of-colorful-lights-abstract-background-34564-large.mp4',
