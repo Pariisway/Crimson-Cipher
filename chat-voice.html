@@ -1,4 +1,852 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><title>Chat - Voice</title><link rel="stylesheet" href="styles/style.css"></head><body>
-<div class="bg-pulse"></div><header class="site-header"><div class="brand"><h1 class="logo">Crimson Cipher</h1><div class="subtitle">Voice Room</div></div><nav class="nav"><a class="nav-link" href="index.html">Home</a><a class="nav-link" href="storytime.html">StoryTime</a><a class="nav-link" href="video.html">Video</a><a class="nav-link active" href="chatroom.html">Chatroom</a></nav></header>
-<main class="container"><h2 class="section-title">Voice Room (placeholder)</h2><p class="lead">This page is a placeholder. For live voice chat, connect WebRTC using Firebase signaling (instructions in README).</p></main><footer class="site-footer">If an if was a fifth, we'd all be drunk.</footer></body></html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chatrooms - Crimson Cipher</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #8b0000;
+            --primary-dark: #660000;
+            --secondary: #1a1a1a;
+            --accent: #ff3333;
+            --text: #f0f0f0;
+            --text-muted: #aaaaaa;
+            --card-bg: rgba(30, 30, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c, #1a1a1a);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-pulse {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(139, 0, 0, 0.1), transparent 25%),
+                        radial-gradient(circle at 80% 20%, rgba(255, 51, 51, 0.05), transparent 25%);
+            z-index: -1;
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .site-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 2rem;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .chat-container {
+            display: flex;
+            gap: 2rem;
+            height: 70vh;
+        }
+
+        .rooms-panel {
+            flex: 0 0 300px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rooms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rooms-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .rooms-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .room-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .room-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary);
+        }
+
+        .room-item.active {
+            background: rgba(139, 0, 0, 0.2);
+            border-color: var(--primary);
+        }
+
+        .room-name {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .room-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1.2rem 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .current-room {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .participants {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .participant-count {
+            background: var(--primary);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background: rgba(139, 0, 0, 0.3);
+            border: 1px solid rgba(139, 0, 0, 0.5);
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .message-sender {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .message-text {
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 0.3rem;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 1.2rem;
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--border);
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .mic-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .mic-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .mic-btn.inactive {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .mic-btn.inactive:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mic-status {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .site-footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-style: italic;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .rooms-panel {
+                flex: none;
+                margin-bottom: 1.5rem;
+            }
+            
+            .site-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pulse"></div>
+    
+    <header class="site-header">
+        <div class="brand">
+            <h1 class="logo">Crimson Cipher</h1>
+            <div class="subtitle">Voice Chatrooms</div>
+        </div>
+        <nav class="nav">
+            <a class="nav-link" href="index.html">Home</a>
+            <a class="nav-link" href="storytime.html">StoryTime</a>
+            <a class="nav-link" href="video.html">Video</a>
+            <a class="nav-link active" href="chatroom.html">Chatroom</a>
+        </nav>
+    </header>
+    
+    <main class="container">
+        <div class="chat-container">
+            <div class="rooms-panel">
+                <div class="rooms-header">
+                    <div class="rooms-title">Chat Rooms</div>
+                    <button id="createRoomBtn" class="btn">
+                        <i class="fas fa-plus"></i> New Room
+                    </button>
+                </div>
+                
+                <div class="rooms-list" id="roomsList">
+                    <!-- Room items will be populated by JavaScript -->
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="empty-text">No rooms available</div>
+                        <button id="createFirstRoomBtn" class="btn">
+                            <i class="fas fa-plus"></i> Create First Room
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="user-info">
+                    <div class="form-group">
+                        <label class="form-label" for="usernameInput">Your Display Name</label>
+                        <input type="text" id="usernameInput" class="form-input" placeholder="Enter your name" value="Anonymous User">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <div class="current-room" id="currentRoomName">Select a room to start chatting</div>
+                    <div class="participants">
+                        <i class="fas fa-users"></i>
+                        <span class="participant-count" id="participantCount">0</span>
+                        <span>participants</span>
+                    </div>
+                </div>
+                
+                <div class="messages-container" id="messagesContainer">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-comment-slash"></i>
+                        </div>
+                        <div class="empty-text">Select a chat room to view messages</div>
+                    </div>
+                </div>
+                
+                <div class="input-area">
+                    <input type="text" id="messageInput" class="message-input" placeholder="Type a message..." disabled>
+                    <button id="sendBtn" class="btn" disabled>
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+                
+                <div class="voice-controls">
+                    <div class="mic-status" id="micStatus">Microphone is off</div>
+                    <div class="mic-btn inactive" id="micToggle">
+                        <i class="fas fa-microphone-slash"></i>
+                        <span>Enable Voice</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="site-footer">
+        If an if was a fifth, we'd all be drunk.
+    </footer>
+    
+    <!-- Create Room Modal -->
+    <div class="modal" id="createRoomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Room</h2>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="roomNameInput">Room Name</label>
+                <input type="text" id="roomNameInput" class="form-input" placeholder="Enter room name">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="roomDescriptionInput">Description (Optional)</label>
+                <input type="text" id="roomDescriptionInput" class="form-input" placeholder="Enter room description">
+            </div>
+            <div class="modal-actions">
+                <button id="cancelCreateRoom" class="btn btn-secondary">Cancel</button>
+                <button id="confirmCreateRoom" class="btn">Create Room</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const roomsList = document.getElementById('roomsList');
+        const currentRoomName = document.getElementById('currentRoomName');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const usernameInput = document.getElementById('usernameInput');
+        const participantCount = document.getElementById('participantCount');
+        const micToggle = document.getElementById('micToggle');
+        const micStatus = document.getElementById('micStatus');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const createFirstRoomBtn = document.getElementById('createFirstRoomBtn');
+        const createRoomModal = document.getElementById('createRoomModal');
+        const roomNameInput = document.getElementById('roomNameInput');
+        const roomDescriptionInput = document.getElementById('roomDescriptionInput');
+        const cancelCreateRoom = document.getElementById('cancelCreateRoom');
+        const confirmCreateRoom = document.getElementById('confirmCreateRoom');
+
+        // Application State
+        let currentRoom = null;
+        let username = usernameInput.value;
+        let isMicActive = false;
+        let localStream = null;
+        let rooms = [
+            { id: 'general', name: 'General Chat', description: 'General discussion room', participants: 12 },
+            { id: 'gaming', name: 'Gaming', description: 'For gamers to connect', participants: 8 },
+            { id: 'music', name: 'Music Lovers', description: 'Share and discuss music', participants: 5 }
+        ];
+
+        // Initialize the application
+        function init() {
+            renderRoomsList();
+            setupEventListeners();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Username change
+            usernameInput.addEventListener('change', function() {
+                username = this.value || 'Anonymous User';
+            });
+
+            // Send message
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Microphone toggle
+            micToggle.addEventListener('click', toggleMicrophone);
+
+            // Room creation
+            createRoomBtn.addEventListener('click', showCreateRoomModal);
+            createFirstRoomBtn.addEventListener('click', showCreateRoomModal);
+            cancelCreateRoom.addEventListener('click', hideCreateRoomModal);
+            confirmCreateRoom.addEventListener('click', createNewRoom);
+        }
+
+        // Render the list of available rooms
+        function renderRoomsList() {
+            if (rooms.length === 0) {
+                roomsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="empty-text">No rooms available</div>
+                        <button id="createFirstRoomBtn" class="btn">
+                            <i class="fas fa-plus"></i> Create First Room
+                        </button>
+                    </div>
+                `;
+                document.getElementById('createFirstRoomBtn').addEventListener('click', showCreateRoomModal);
+                return;
+            }
+
+            let roomsHTML = '';
+            rooms.forEach(room => {
+                const isActive = currentRoom && currentRoom.id === room.id;
+                roomsHTML += `
+                    <div class="room-item ${isActive ? 'active' : ''}" data-room-id="${room.id}">
+                        <div class="room-name">${room.name}</div>
+                        <div class="room-info">
+                            <span>${room.description}</span>
+                            <span><i class="fas fa-users"></i> ${room.participants}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            roomsList.innerHTML = roomsHTML;
+            
+            // Add click event to room items
+            document.querySelectorAll('.room-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const roomId = this.getAttribute('data-room-id');
+                    joinRoom(roomId);
+                });
+            });
+        }
+
+        // Show the create room modal
+        function showCreateRoomModal() {
+            createRoomModal.style.display = 'flex';
+            roomNameInput.focus();
+        }
+
+        // Hide the create room modal
+        function hideCreateRoomModal() {
+            createRoomModal.style.display = 'none';
+            roomNameInput.value = '';
+            roomDescriptionInput.value = '';
+        }
+
+        // Create a new room
+        function createNewRoom() {
+            const name = roomNameInput.value.trim();
+            const description = roomDescriptionInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter a room name');
+                return;
+            }
+            
+            const newRoom = {
+                id: generateRoomId(),
+                name: name,
+                description: description || 'No description',
+                participants: 1
+            };
+            
+            rooms.push(newRoom);
+            hideCreateRoomModal();
+            renderRoomsList();
+            joinRoom(newRoom.id);
+            
+            // In a real app, you would save this to Firebase
+            console.log('Created new room:', newRoom);
+        }
+
+        // Generate a unique room ID
+        function generateRoomId() {
+            return 'room_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Join a room
+        function joinRoom(roomId) {
+            const room = rooms.find(r => r.id === roomId);
+            if (!room) return;
+            
+            // Leave current room if any
+            if (currentRoom) {
+                // In a real app, you would disconnect from Firebase and WebRTC
+                console.log(`Left room: ${currentRoom.name}`);
+            }
+            
+            currentRoom = room;
+            renderRoomsList();
+            currentRoomName.textContent = room.name;
+            participantCount.textContent = room.participants;
+            
+            // Enable message input
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+            
+            // Clear and update messages
+            messagesContainer.innerHTML = '';
+            addSystemMessage(`You joined ${room.name}`);
+            addSystemMessage('This is a demo. In a real app, you would see messages from other users.');
+            
+            // In a real app, you would connect to Firebase and WebRTC here
+            console.log(`Joined room: ${room.name}`);
+        }
+
+        // Send a message
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !currentRoom) return;
+            
+            addMessage(username, text, true);
+            messageInput.value = '';
+            
+            // In a real app, you would send this to Firebase
+            console.log(`Sent message to ${currentRoom.name}: ${text}`);
+            
+            // Simulate a response after a short delay
+            setTimeout(() => {
+                const responses = [
+                    "That's interesting!",
+                    "I agree with you.",
+                    "Can you explain more?",
+                    "Nice point!",
+                    "I see what you mean."
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage('Other User', randomResponse, false);
+            }, 1000 + Math.random() * 2000);
+        }
+
+        // Add a user message to the chat
+        function addMessage(sender, text, isOwn) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="message-sender">${sender}</div>
+                <div class="message-text">${text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Add a system message to the chat
+        function addSystemMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.style.cssText = 'align-self: center; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-style: italic;';
+            messageDiv.textContent = text;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Toggle microphone on/off
+        function toggleMicrophone() {
+            if (isMicActive) {
+                // Turn off microphone
+                isMicActive = false;
+                micToggle.className = 'mic-btn inactive';
+                micToggle.innerHTML = '<i class="fas fa-microphone-slash"></i> <span>Enable Voice</span>';
+                micStatus.textContent = 'Microphone is off';
+                
+                // In a real app, you would disable the audio stream
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    localStream = null;
+                }
+            } else {
+                // Turn on microphone
+                isMicActive = true;
+                micToggle.className = 'mic-btn active';
+                micToggle.innerHTML = '<i class="fas fa-microphone"></i> <span>Disable Voice</span>';
+                micStatus.textContent = 'Microphone is on - You are broadcasting';
+                
+                // In a real app, you would get user media and set up WebRTC
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(stream => {
+                        localStream = stream;
+                        console.log('Microphone access granted');
+                    })
+                    .catch(error => {
+                        console.error('Error accessing microphone:', error);
+                        alert('Could not access your microphone. Please check permissions.');
+                        toggleMicrophone(); // Turn back off
+                    });
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
