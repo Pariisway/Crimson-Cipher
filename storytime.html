@@ -3,7 +3,198 @@
 <head>
     <meta charset="utf-8">
     <title>Crimson Cipher - StoryTime</title>
-    <link rel="stylesheet" href="styles/style.css">
+    <style>
+        /* Base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.7;
+            color: #333;
+            background-color: #f9f9f9;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        .bg-pulse {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #f0f0f0, #e8e8e8, #f5f5f5, #eaeaea);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            z-index: -1;
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Header styles */
+        .site-header {
+            background-color: rgba(200, 0, 0, 0.9);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Main content */
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        
+        .hero-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #c00;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .story-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+        
+        .story-card h2 {
+            color: #c00;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        /* Story content styling */
+        .story-content p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            text-align: justify;
+        }
+        
+        .text-message {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f8f8;
+            padding: 1rem 1.2rem;
+            border-radius: 6px;
+            margin: 1.5rem 0;
+            border-left: 4px solid #c00;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .quote {
+            font-style: italic;
+            color: #555;
+            margin: 1.5rem 0;
+            padding: 1.2rem 1.5rem;
+            background-color: #f8f8f8;
+            border-radius: 6px;
+            border-left: 4px solid #999;
+        }
+        
+        .scene-break {
+            text-align: center;
+            margin: 2.5rem 0;
+            color: #999;
+            letter-spacing: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .dialogue {
+            margin: 2rem 0;
+            padding-left: 1.5rem;
+            border-left: 3px solid #e0e0e0;
+        }
+        
+        .dialogue p {
+            margin-bottom: 0.8rem;
+        }
+        
+        /* Ezoic ad styling */
+        .ezoic-ad {
+            background-color: #f5f5f5;
+            padding: 1.5rem;
+            text-align: center;
+            margin: 2rem 0;
+            border-radius: 6px;
+            border: 1px dashed #ccc;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: rgba(200, 0, 0, 0.9);
+            color: white;
+            margin-top: 2rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .site-header {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .logo {
+                margin-bottom: 1rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .story-card {
+                padding: 1.5rem;
+            }
+            
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .story-card h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="bg-pulse"></div>
@@ -26,67 +217,79 @@
             <article class="story-card">
                 <h2>A.W.A.F Episode 1 — Secrets in the Smoke</h2>
                 
-<p>The studio lights glowed red as Charlie King leaned toward the microphone, his voice smooth and commanding. To his millions of followers, he was the voice of conviction—sharp, fearless, magnetic. But under the surface, something was cracking.
-
-Across the room, Candice O’Neal watched him through the glass booth window, her reflection split between admiration and guilt. The chemistry between them was an open secret to anyone who paid attention, but in their world, appearances were everything.
-
-During a commercial break, Candice’s phone buzzed.
-Unknown Number: “They’re watching. Not just you.”
-
-She frowned, glancing up. Charlie smiled at her through the glass—too calm. Too knowing. She typed back a reply but never hit send.
-
-Across town, Rachel King sat alone in their minimalist kitchen, the glow of Charlie’s phone mirrored in her wine glass. The same message flickered on his screen, timestamped, traced, familiar. Her pulse steadied as she whispered to herself,
-
-> “This ends differently than you think.”
-
-
-    Outside, security cameras blinked. A low hum filled the house, like static before a storm. Rachel picked up a burner phone, dialed a number that didn’t exist in Charlie’s world, and said three words:
-
-> “It begins now.”
-
-
-
-
-Rachel didn’t confront him. Not yet. She’d learned long ago that power wasn’t in reaction—it was in restraint. For weeks, she’d watched their every move, pulling on quiet threads: security logs, access cards, old emails. Every secret had a pattern.
-
-When she found the right pressure point, she squeezed.
-
-A doctored audio clip of Candice hit the media overnight—edited to sound like she was plotting against Charlie’s political network. The empire trembled. Donors panicked. Online loyalists turned on one another.
-
-Candice woke to a barrage of messages. One stood out:
-Anonymous: “They’re onto you. And they’re playing for keeps.”
-
-She stared at it for a long time. Her hands shook—not with fear, but with fury. Someone inside their circle had declared war.
-
-Meanwhile, Rachel watched the storm unfold from her laptop. Her expression was unreadable. Every headline, every hashtag, every whisper in the comment threads meant her plan was working.
-
-> “They built this machine on lies,” she murmured, “so lies will bring it down.”
-
-
-
-
-Charlie stormed into Candice’s apartment, jaw clenched.
-
-> “Who leaked the clip?”
-
-
-
-Candice crossed her arms, calm but calculating.
-
-> “Maybe you should ask your wife.”
-
-
-
-The silence that followed was heavy enough to fracture the air. Charlie had spent years mastering control—of the narrative, of his image, of his temper—but Rachel was different. She played chess while everyone else played checkers.
-
-Meanwhile, Rachel’s plan deepened. Anonymous messages reached Charlie’s donors:
-“Follow me or watch the empire fall.”
-
-Half of them dismissed it. The other half reached out—quietly. The cracks widened.
-
-That night, Charlie’s live podcast glitched mid-broadcast. The feed froze, then distorted into static. For a split second, viewers saw a figure standing behind him—half in shadow, half in light.
-
-Candice watched the glitch on her phone, pulse racing. Rachel watched from home, sipping her wine, the ghost of a smile forming.</p>
+                <div class="story-content">
+                    <p>The studio lights glowed red as Charlie King leaned toward the microphone, his voice smooth and commanding. To his millions of followers, he was the voice of conviction—sharp, fearless, magnetic. But under the surface, something was cracking.</p>
+                    
+                    <p>Across the room, Candice O'Neal watched him through the glass booth window, her reflection split between admiration and guilt. The chemistry between them was an open secret to anyone who paid attention, but in their world, appearances were everything.</p>
+                    
+                    <p>During a commercial break, Candice's phone buzzed.</p>
+                    
+                    <div class="text-message">
+                        Unknown Number: "They're watching. Not just you."
+                    </div>
+                    
+                    <p>She frowned, glancing up. Charlie smiled at her through the glass—too calm. Too knowing. She typed back a reply but never hit send.</p>
+                    
+                    <p>Across town, Rachel King sat alone in their minimalist kitchen, the glow of Charlie's phone mirrored in her wine glass. The same message flickered on his screen, timestamped, traced, familiar. Her pulse steadied as she whispered to herself,</p>
+                    
+                    <div class="quote">
+                        "This ends differently than you think."
+                    </div>
+                    
+                    <p>Outside, security cameras blinked. A low hum filled the house, like static before a storm. Rachel picked up a burner phone, dialed a number that didn't exist in Charlie's world, and said three words:</p>
+                    
+                    <div class="quote">
+                        "It begins now."
+                    </div>
+                    
+                    <div class="scene-break">• • •</div>
+                    
+                    <p>Rachel didn't confront him. Not yet. She'd learned long ago that power wasn't in reaction—it was in restraint. For weeks, she'd watched their every move, pulling on quiet threads: security logs, access cards, old emails. Every secret had a pattern.</p>
+                    
+                    <p>When she found the right pressure point, she squeezed.</p>
+                    
+                    <p>A doctored audio clip of Candice hit the media overnight—edited to sound like she was plotting against Charlie's political network. The empire trembled. Donors panicked. Online loyalists turned on one another.</p>
+                    
+                    <p>Candice woke to a barrage of messages. One stood out:</p>
+                    
+                    <div class="text-message">
+                        Anonymous: "They're onto you. And they're playing for keeps."
+                    </div>
+                    
+                    <p>She stared at it for a long time. Her hands shook—not with fear, but with fury. Someone inside their circle had declared war.</p>
+                    
+                    <p>Meanwhile, Rachel watched the storm unfold from her laptop. Her expression was unreadable. Every headline, every hashtag, every whisper in the comment threads meant her plan was working.</p>
+                    
+                    <div class="quote">
+                        "They built this machine on lies," she murmured, "so lies will bring it down."
+                    </div>
+                    
+                    <div class="scene-break">• • •</div>
+                    
+                    <p>Charlie stormed into Candice's apartment, jaw clenched.</p>
+                    
+                    <div class="dialogue">
+                        <p><strong>Charlie:</strong> "Who leaked the clip?"</p>
+                    </div>
+                    
+                    <div class="dialogue">
+                        <p><strong>Candice:</strong> "Maybe you should ask your wife."</p>
+                    </div>
+                    
+                    <p>The silence that followed was heavy enough to fracture the air. Charlie had spent years mastering control—of the narrative, of his image, of his temper—but Rachel was different. She played chess while everyone else played checkers.</p>
+                    
+                    <p>Meanwhile, Rachel's plan deepened. Anonymous messages reached Charlie's donors:</p>
+                    
+                    <div class="text-message">
+                        "Follow me or watch the empire fall."
+                    </div>
+                    
+                    <p>Half of them dismissed it. The other half reached out—quietly. The cracks widened.</p>
+                    
+                    <p>That night, Charlie's live podcast glitched mid-broadcast. The feed froze, then distorted into static. For a split second, viewers saw a figure standing behind him—half in shadow, half in light.</p>
+                    
+                    <p>Candice watched the glitch on her phone, pulse racing. Rachel watched from home, sipping her wine, the ghost of a smile forming.</p>
+                </div>
                 
                 <div class="ezoic-ad" id="CC_STORY_MID">Ezoic: STORY_MID</div>
             </article>
