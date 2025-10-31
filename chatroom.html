@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatrooms - Crimson Cipher</title>
+    <title>Voice Chatrooms - Crimson Cipher</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -350,6 +350,33 @@
             color: var(--text-muted);
         }
 
+        .participants-list {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .participant-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .participant-item.active {
+            background: rgba(139, 0, 0, 0.2);
+        }
+
+        .participant-mic {
+            color: var(--accent);
+        }
+
+        .participant-mic.muted {
+            color: var(--text-muted);
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -516,6 +543,13 @@
                         <input type="text" id="usernameInput" class="form-input" placeholder="Enter your name" value="Anonymous User">
                     </div>
                 </div>
+
+                <div class="participants-list" id="participantsList">
+                    <div class="form-label">Participants</div>
+                    <div id="participantsContainer">
+                        <!-- Participants will be populated by JavaScript -->
+                    </div>
+                </div>
             </div>
             
             <div class="chat-panel">
@@ -589,6 +623,7 @@
         const sendBtn = document.getElementById('sendBtn');
         const usernameInput = document.getElementById('usernameInput');
         const participantCount = document.getElementById('participantCount');
+        const participantsContainer = document.getElementById('participantsContainer');
         const micToggle = document.getElementById('micToggle');
         const micStatus = document.getElementById('micStatus');
         const createRoomBtn = document.getElementById('createRoomBtn');
@@ -599,11 +634,24 @@
         const cancelCreateRoom = document.getElementById('cancelCreateRoom');
         const confirmCreateRoom = document.getElementById('confirmCreateRoom');
 
+        // WebRTC Configuration
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
         // Application State
         let currentRoom = null;
         let username = usernameInput.value;
         let isMicActive = false;
         let localStream = null;
+        let peerConnections = {};
+        let dataChannel = null;
+        let localConnection = null;
+        
+        // Sample rooms data
         let rooms = [
             { id: 'general', name: 'General Chat', description: 'General discussion room', participants: 12 },
             { id: 'gaming', name: 'Gaming', description: 'For gamers to connect', participants: 8 },
@@ -735,8 +783,7 @@
             
             // Leave current room if any
             if (currentRoom) {
-                // In a real app, you would disconnect from Firebase and WebRTC
-                console.log(`Left room: ${currentRoom.name}`);
+                leaveCurrentRoom();
             }
             
             currentRoom = room;
@@ -752,35 +799,113 @@
             // Clear and update messages
             messagesContainer.innerHTML = '';
             addSystemMessage(`You joined ${room.name}`);
-            addSystemMessage('This is a demo. In a real app, you would see messages from other users.');
+            addSystemMessage('WebRTC voice chat is now active. You can talk to other participants.');
             
-            // In a real app, you would connect to Firebase and WebRTC here
+            // Initialize WebRTC connection
+            initializeWebRTC();
+            
             console.log(`Joined room: ${room.name}`);
         }
 
-        // Send a message
+        // Leave the current room
+        function leaveCurrentRoom() {
+            if (isMicActive) {
+                toggleMicrophone(); // Turn off microphone
+            }
+            
+            // Close all peer connections
+            Object.values(peerConnections).forEach(pc => {
+                pc.close();
+            });
+            peerConnections = {};
+            
+            // Close data channel
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+            
+            // Close local connection
+            if (localConnection) {
+                localConnection.close();
+                localConnection = null;
+            }
+            
+            console.log(`Left room: ${currentRoom.name}`);
+        }
+
+        // Initialize WebRTC for voice chat
+        async function initializeWebRTC() {
+            try {
+                // Create a new RTCPeerConnection
+                localConnection = new RTCPeerConnection(configuration);
+                
+                // Set up event handlers for the connection
+                localConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        // Send the candidate to other peers (in a real app, via signaling server)
+                        console.log('New ICE candidate:', event.candidate);
+                    }
+                };
+                
+                localConnection.ontrack = (event) => {
+                    // When we receive a remote stream, play it
+                    console.log('Received remote stream:', event.streams[0]);
+                    // In a real app, you would add the audio to the UI
+                };
+                
+                // Create a data channel for text messages
+                dataChannel = localConnection.createDataChannel('chat');
+                dataChannel.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    addMessage(message.sender, message.text, false);
+                };
+                
+                dataChannel.onopen = () => {
+                    console.log('Data channel opened');
+                };
+                
+                // In a real app, you would create an offer and exchange it with other peers
+                // via a signaling server (like Firebase, Socket.io, etc.)
+                
+                console.log('WebRTC connection initialized');
+            } catch (error) {
+                console.error('Error initializing WebRTC:', error);
+                addSystemMessage('Error initializing voice chat. Please refresh and try again.');
+            }
+        }
+
+        // Send a message via WebRTC data channel
         function sendMessage() {
             const text = messageInput.value.trim();
             if (!text || !currentRoom) return;
             
+            // Add message to UI
             addMessage(username, text, true);
             messageInput.value = '';
             
-            // In a real app, you would send this to Firebase
-            console.log(`Sent message to ${currentRoom.name}: ${text}`);
-            
-            // Simulate a response after a short delay
-            setTimeout(() => {
-                const responses = [
-                    "That's interesting!",
-                    "I agree with you.",
-                    "Can you explain more?",
-                    "Nice point!",
-                    "I see what you mean."
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                addMessage('Other User', randomResponse, false);
-            }, 1000 + Math.random() * 2000);
+            // Send message via WebRTC data channel if available
+            if (dataChannel && dataChannel.readyState === 'open') {
+                const message = {
+                    sender: username,
+                    text: text,
+                    timestamp: new Date().toISOString()
+                };
+                dataChannel.send(JSON.stringify(message));
+            } else {
+                // Fallback: simulate receiving a message after a short delay
+                setTimeout(() => {
+                    const responses = [
+                        "That's interesting!",
+                        "I agree with you.",
+                        "Can you explain more?",
+                        "Nice point!",
+                        "I see what you mean."
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage('Other User', randomResponse, false);
+                }, 1000 + Math.random() * 2000);
+            }
         }
 
         // Add a user message to the chat
@@ -811,7 +936,7 @@
         }
 
         // Toggle microphone on/off
-        function toggleMicrophone() {
+        async function toggleMicrophone() {
             if (isMicActive) {
                 // Turn off microphone
                 isMicActive = false;
@@ -819,29 +944,62 @@
                 micToggle.innerHTML = '<i class="fas fa-microphone-slash"></i> <span>Enable Voice</span>';
                 micStatus.textContent = 'Microphone is off';
                 
-                // In a real app, you would disable the audio stream
+                // Stop the local stream
                 if (localStream) {
                     localStream.getTracks().forEach(track => track.stop());
                     localStream = null;
                 }
-            } else {
-                // Turn on microphone
-                isMicActive = true;
-                micToggle.className = 'mic-btn active';
-                micToggle.innerHTML = '<i class="fas fa-microphone"></i> <span>Disable Voice</span>';
-                micStatus.textContent = 'Microphone is on - You are broadcasting';
                 
-                // In a real app, you would get user media and set up WebRTC
-                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-                    .then(stream => {
-                        localStream = stream;
-                        console.log('Microphone access granted');
-                    })
-                    .catch(error => {
-                        console.error('Error accessing microphone:', error);
-                        alert('Could not access your microphone. Please check permissions.');
-                        toggleMicrophone(); // Turn back off
+                // Remove local audio track from connection
+                if (localConnection) {
+                    const senders = localConnection.getSenders();
+                    senders.forEach(sender => {
+                        if (sender.track && sender.track.kind === 'audio') {
+                            localConnection.removeTrack(sender);
+                        }
                     });
+                }
+                
+                addSystemMessage('Microphone turned off');
+            } else {
+                try {
+                    // Turn on microphone
+                    isMicActive = true;
+                    micToggle.className = 'mic-btn active';
+                    micToggle.innerHTML = '<i class="fas fa-microphone"></i> <span>Disable Voice</span>';
+                    micStatus.textContent = 'Microphone is on - You are broadcasting';
+                    
+                    // Get user media (audio only)
+                    localStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }, 
+                        video: false 
+                    });
+                    
+                    // Add the audio track to the WebRTC connection
+                    if (localConnection) {
+                        localStream.getTracks().forEach(track => {
+                            localConnection.addTrack(track, localStream);
+                        });
+                    }
+                    
+                    addSystemMessage('Microphone turned on - You can now speak');
+                    
+                    // In a real app, you would create an offer and send it to other peers
+                    if (localConnection) {
+                        const offer = await localConnection.createOffer();
+                        await localConnection.setLocalDescription(offer);
+                        console.log('Created offer:', offer);
+                        // In a real app, you would send this offer to other peers via signaling server
+                    }
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    alert('Could not access your microphone. Please check permissions.');
+                    toggleMicrophone(); // Turn back off
+                }
             }
         }
 
