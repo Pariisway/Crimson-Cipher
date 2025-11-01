@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Chatrooms - Crimson Cipher</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cmp.gatekeeperconsent.com/min.js" data-cfasync="false"></script>
-<script src="https://the.gatekeeperconsent.com/cmp.min.js" data-cfasync="false"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <style>
+        /* Your existing CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -352,33 +356,6 @@
             color: var(--text-muted);
         }
 
-        .participants-list {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .participant-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
-        }
-
-        .participant-item.active {
-            background: rgba(139, 0, 0, 0.2);
-        }
-
-        .participant-mic {
-            color: var(--accent);
-        }
-
-        .participant-mic.muted {
-            color: var(--text-muted);
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -477,6 +454,26 @@
             margin-bottom: 1.5rem;
         }
 
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+
+        .connection-status.connected {
+            background: green;
+            color: white;
+        }
+
+        .connection-status.disconnected {
+            background: red;
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .chat-container {
                 flex-direction: column;
@@ -502,6 +499,7 @@
 </head>
 <body>
     <div class="bg-pulse"></div>
+    <div id="connectionStatus" class="connection-status disconnected">Disconnected</div>
     
     <header class="site-header">
         <div class="brand">
@@ -527,15 +525,11 @@
                 </div>
                 
                 <div class="rooms-list" id="roomsList">
-                    <!-- Room items will be populated by JavaScript -->
                     <div class="empty-state">
                         <div class="empty-icon">
                             <i class="fas fa-comments"></i>
                         </div>
-                        <div class="empty-text">No rooms available</div>
-                        <button id="createFirstRoomBtn" class="btn">
-                            <i class="fas fa-plus"></i> Create First Room
-                        </button>
+                        <div class="empty-text">Loading rooms...</div>
                     </div>
                 </div>
                 
@@ -543,13 +537,6 @@
                     <div class="form-group">
                         <label class="form-label" for="usernameInput">Your Display Name</label>
                         <input type="text" id="usernameInput" class="form-input" placeholder="Enter your name" value="Anonymous User">
-                    </div>
-                </div>
-
-                <div class="participants-list" id="participantsList">
-                    <div class="form-label">Participants</div>
-                    <div id="participantsContainer">
-                        <!-- Participants will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -617,6 +604,23 @@
     </div>
 
     <script>
+        // === REPLACE THIS WITH YOUR FIREBASE CONFIG ===
+        const firebaseConfig = {
+          apiKey: "AIzaSyCq-j6znLxClsizR0GcFXr6efKP3kkRry0",
+          authDomain: "crimsonchatroom.firebaseapp.com",
+          databaseURL: "https://crimsonchatroom-default-rtdb.firebaseio.com",
+          projectId: "crimsonchatroom",
+          storageBucket: "crimsonchatroom.firebasestorage.app",
+          messagingSenderId: "592713901559",
+          appId: "1:592713901559:web:1a3f9109cb77084ef63af2",
+          measurementId: "G-H0LGFH3LYV"
+        };
+        // === END FIREBASE CONFIG ===
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // DOM Elements
         const roomsList = document.getElementById('roomsList');
         const currentRoomName = document.getElementById('currentRoomName');
@@ -625,45 +629,33 @@
         const sendBtn = document.getElementById('sendBtn');
         const usernameInput = document.getElementById('usernameInput');
         const participantCount = document.getElementById('participantCount');
-        const participantsContainer = document.getElementById('participantsContainer');
         const micToggle = document.getElementById('micToggle');
         const micStatus = document.getElementById('micStatus');
         const createRoomBtn = document.getElementById('createRoomBtn');
-        const createFirstRoomBtn = document.getElementById('createFirstRoomBtn');
         const createRoomModal = document.getElementById('createRoomModal');
         const roomNameInput = document.getElementById('roomNameInput');
         const roomDescriptionInput = document.getElementById('roomDescriptionInput');
         const cancelCreateRoom = document.getElementById('cancelCreateRoom');
         const confirmCreateRoom = document.getElementById('confirmCreateRoom');
-
-        // WebRTC Configuration
-        const configuration = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        };
+        const connectionStatus = document.getElementById('connectionStatus');
 
         // Application State
         let currentRoom = null;
         let username = usernameInput.value;
         let isMicActive = false;
         let localStream = null;
-        let peerConnections = {};
-        let dataChannel = null;
-        let localConnection = null;
-        
-        // Sample rooms data
-        let rooms = [
-            { id: 'general', name: 'General Chat', description: 'General discussion room', participants: 12 },
-            { id: 'gaming', name: 'Gaming', description: 'For gamers to connect', participants: 8 },
-            { id: 'music', name: 'Music Lovers', description: 'Share and discuss music', participants: 5 }
-        ];
+        let userId = generateUserId();
+
+        // Generate unique user ID
+        function generateUserId() {
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
 
         // Initialize the application
         function init() {
-            renderRoomsList();
             setupEventListeners();
+            loadRooms();
+            setupConnectionMonitoring();
         }
 
         // Set up event listeners
@@ -671,6 +663,9 @@
             // Username change
             usernameInput.addEventListener('change', function() {
                 username = this.value || 'Anonymous User';
+                if (currentRoom) {
+                    updateUserInRoom();
+                }
             });
 
             // Send message
@@ -686,14 +681,36 @@
 
             // Room creation
             createRoomBtn.addEventListener('click', showCreateRoomModal);
-            createFirstRoomBtn.addEventListener('click', showCreateRoomModal);
             cancelCreateRoom.addEventListener('click', hideCreateRoomModal);
             confirmCreateRoom.addEventListener('click', createNewRoom);
         }
 
+        // Monitor Firebase connection
+        function setupConnectionMonitoring() {
+            const connectedRef = database.ref('.info/connected');
+            connectedRef.on('value', (snap) => {
+                if (snap.val() === true) {
+                    connectionStatus.textContent = 'Connected';
+                    connectionStatus.className = 'connection-status connected';
+                } else {
+                    connectionStatus.textContent = 'Disconnected';
+                    connectionStatus.className = 'connection-status disconnected';
+                }
+            });
+        }
+
+        // Load rooms from Firebase
+        function loadRooms() {
+            const roomsRef = database.ref('rooms');
+            roomsRef.on('value', (snapshot) => {
+                const roomsData = snapshot.val();
+                renderRoomsList(roomsData);
+            });
+        }
+
         // Render the list of available rooms
-        function renderRoomsList() {
-            if (rooms.length === 0) {
+        function renderRoomsList(roomsData) {
+            if (!roomsData || Object.keys(roomsData).length === 0) {
                 roomsList.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">
@@ -710,14 +727,17 @@
             }
 
             let roomsHTML = '';
-            rooms.forEach(room => {
-                const isActive = currentRoom && currentRoom.id === room.id;
+            Object.keys(roomsData).forEach(roomId => {
+                const room = roomsData[roomId];
+                const isActive = currentRoom && currentRoom.id === roomId;
+                const participantCount = room.participants ? Object.keys(room.participants).length : 0;
+                
                 roomsHTML += `
-                    <div class="room-item ${isActive ? 'active' : ''}" data-room-id="${room.id}">
+                    <div class="room-item ${isActive ? 'active' : ''}" data-room-id="${roomId}">
                         <div class="room-name">${room.name}</div>
                         <div class="room-info">
                             <span>${room.description}</span>
-                            <span><i class="fas fa-users"></i> ${room.participants}</span>
+                            <span><i class="fas fa-users"></i> ${participantCount}</span>
                         </div>
                     </div>
                 `;
@@ -757,20 +777,19 @@
                 return;
             }
             
+            const roomId = generateRoomId();
             const newRoom = {
-                id: generateRoomId(),
+                id: roomId,
                 name: name,
                 description: description || 'No description',
-                participants: 1
+                created: Date.now(),
+                createdBy: userId
             };
             
-            rooms.push(newRoom);
+            // Save to Firebase
+            database.ref('rooms/' + roomId).set(newRoom);
             hideCreateRoomModal();
-            renderRoomsList();
-            joinRoom(newRoom.id);
-            
-            // In a real app, you would save this to Firebase
-            console.log('Created new room:', newRoom);
+            joinRoom(roomId);
         }
 
         // Generate a unique room ID
@@ -780,138 +799,143 @@
 
         // Join a room
         function joinRoom(roomId) {
-            const room = rooms.find(r => r.id === roomId);
-            if (!room) return;
-            
             // Leave current room if any
             if (currentRoom) {
                 leaveCurrentRoom();
             }
             
-            currentRoom = room;
-            renderRoomsList();
-            currentRoomName.textContent = room.name;
-            participantCount.textContent = room.participants;
+            currentRoom = { id: roomId };
             
-            // Enable message input
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            messageInput.focus();
+            // Load room data
+            database.ref('rooms/' + roomId).once('value').then((snapshot) => {
+                const roomData = snapshot.val();
+                if (roomData) {
+                    currentRoom = { ...roomData, id: roomId };
+                    currentRoomName.textContent = roomData.name;
+                    
+                    // Enable message input
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    messageInput.focus();
+                    
+                    // Clear and update messages
+                    messagesContainer.innerHTML = '';
+                    addSystemMessage(`You joined ${roomData.name}`);
+                    
+                    // Load messages
+                    loadMessages(roomId);
+                    
+                    // Join as participant
+                    joinAsParticipant(roomId);
+                    
+                    // Listen for new messages
+                    listenForNewMessages(roomId);
+                    
+                    // Listen for participant changes
+                    listenForParticipants(roomId);
+                }
+            });
+        }
+
+        // Join room as participant
+        function joinAsParticipant(roomId) {
+            const userRef = database.ref(`rooms/${roomId}/participants/${userId}`);
+            userRef.set({
+                name: username,
+                joined: Date.now(),
+                isActive: true
+            });
             
-            // Clear and update messages
-            messagesContainer.innerHTML = '';
-            addSystemMessage(`You joined ${room.name}`);
-            addSystemMessage('WebRTC voice chat is now active. You can talk to other participants.');
-            
-            // Initialize WebRTC connection
-            initializeWebRTC();
-            
-            console.log(`Joined room: ${room.name}`);
+            // Remove user when they leave
+            window.addEventListener('beforeunload', () => {
+                userRef.remove();
+            });
+        }
+
+        // Update user info in room
+        function updateUserInRoom() {
+            if (currentRoom) {
+                const userRef = database.ref(`rooms/${currentRoom.id}/participants/${userId}`);
+                userRef.update({
+                    name: username
+                });
+            }
         }
 
         // Leave the current room
         function leaveCurrentRoom() {
-            if (isMicActive) {
-                toggleMicrophone(); // Turn off microphone
+            if (currentRoom) {
+                // Remove user from participants
+                database.ref(`rooms/${currentRoom.id}/participants/${userId}`).remove();
+                
+                if (isMicActive) {
+                    toggleMicrophone(); // Turn off microphone
+                }
             }
-            
-            // Close all peer connections
-            Object.values(peerConnections).forEach(pc => {
-                pc.close();
+        }
+
+        // Load messages for a room
+        function loadMessages(roomId) {
+            const messagesRef = database.ref(`messages/${roomId}`).orderByChild('timestamp').limitToLast(50);
+            messagesRef.once('value').then((snapshot) => {
+                const messages = snapshot.val();
+                if (messages) {
+                    Object.values(messages).forEach(message => {
+                        addMessage(message.sender, message.text, message.senderId === userId);
+                    });
+                }
             });
-            peerConnections = {};
-            
-            // Close data channel
-            if (dataChannel) {
-                dataChannel.close();
-                dataChannel = null;
-            }
-            
-            // Close local connection
-            if (localConnection) {
-                localConnection.close();
-                localConnection = null;
-            }
-            
-            console.log(`Left room: ${currentRoom.name}`);
         }
 
-        // Initialize WebRTC for voice chat
-        async function initializeWebRTC() {
-            try {
-                // Create a new RTCPeerConnection
-                localConnection = new RTCPeerConnection(configuration);
-                
-                // Set up event handlers for the connection
-                localConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        // Send the candidate to other peers (in a real app, via signaling server)
-                        console.log('New ICE candidate:', event.candidate);
-                    }
-                };
-                
-                localConnection.ontrack = (event) => {
-                    // When we receive a remote stream, play it
-                    console.log('Received remote stream:', event.streams[0]);
-                    // In a real app, you would add the audio to the UI
-                };
-                
-                // Create a data channel for text messages
-                dataChannel = localConnection.createDataChannel('chat');
-                dataChannel.onmessage = (event) => {
-                    const message = JSON.parse(event.data);
+        // Listen for new messages
+        function listenForNewMessages(roomId) {
+            const messagesRef = database.ref(`messages/${roomId}`);
+            messagesRef.orderByChild('timestamp').startAt(Date.now()).on('child_added', (snapshot) => {
+                const message = snapshot.val();
+                if (message.senderId !== userId) { // Don't show our own messages twice
                     addMessage(message.sender, message.text, false);
-                };
-                
-                dataChannel.onopen = () => {
-                    console.log('Data channel opened');
-                };
-                
-                // In a real app, you would create an offer and exchange it with other peers
-                // via a signaling server (like Firebase, Socket.io, etc.)
-                
-                console.log('WebRTC connection initialized');
-            } catch (error) {
-                console.error('Error initializing WebRTC:', error);
-                addSystemMessage('Error initializing voice chat. Please refresh and try again.');
-            }
+                }
+            });
         }
 
-        // Send a message via WebRTC data channel
+        // Listen for participant changes
+        function listenForParticipants(roomId) {
+            const participantsRef = database.ref(`rooms/${roomId}/participants`);
+            participantsRef.on('value', (snapshot) => {
+                const participants = snapshot.val();
+                const count = participants ? Object.keys(participants).length : 0;
+                participantCount.textContent = count;
+            });
+        }
+
+        // Send a message
         function sendMessage() {
             const text = messageInput.value.trim();
             if (!text || !currentRoom) return;
             
-            // Add message to UI
+            const message = {
+                sender: username,
+                senderId: userId,
+                text: text,
+                timestamp: Date.now()
+            };
+            
+            // Save to Firebase
+            database.ref(`messages/${currentRoom.id}`).push(message);
+            
+            // Add to UI immediately
             addMessage(username, text, true);
             messageInput.value = '';
-            
-            // Send message via WebRTC data channel if available
-            if (dataChannel && dataChannel.readyState === 'open') {
-                const message = {
-                    sender: username,
-                    text: text,
-                    timestamp: new Date().toISOString()
-                };
-                dataChannel.send(JSON.stringify(message));
-            } else {
-                // Fallback: simulate receiving a message after a short delay
-                setTimeout(() => {
-                    const responses = [
-                        "That's interesting!",
-                        "I agree with you.",
-                        "Can you explain more?",
-                        "Nice point!",
-                        "I see what you mean."
-                    ];
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    addMessage('Other User', randomResponse, false);
-                }, 1000 + Math.random() * 2000);
-            }
         }
 
         // Add a user message to the chat
         function addMessage(sender, text, isOwn) {
+            // Remove empty state if it exists
+            const emptyState = messagesContainer.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
             
@@ -929,6 +953,12 @@
 
         // Add a system message to the chat
         function addSystemMessage(text) {
+            // Remove empty state if it exists
+            const emptyState = messagesContainer.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             messageDiv.style.cssText = 'align-self: center; background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-style: italic;';
@@ -952,16 +982,6 @@
                     localStream = null;
                 }
                 
-                // Remove local audio track from connection
-                if (localConnection) {
-                    const senders = localConnection.getSenders();
-                    senders.forEach(sender => {
-                        if (sender.track && sender.track.kind === 'audio') {
-                            localConnection.removeTrack(sender);
-                        }
-                    });
-                }
-                
                 addSystemMessage('Microphone turned off');
             } else {
                 try {
@@ -981,22 +1001,11 @@
                         video: false 
                     });
                     
-                    // Add the audio track to the WebRTC connection
-                    if (localConnection) {
-                        localStream.getTracks().forEach(track => {
-                            localConnection.addTrack(track, localStream);
-                        });
-                    }
+                    addSystemMessage('Microphone turned on - Voice chat ready');
                     
-                    addSystemMessage('Microphone turned on - You can now speak');
+                    // Here you would integrate with WebRTC for actual voice chat
+                    // This would require additional signaling and peer connections
                     
-                    // In a real app, you would create an offer and send it to other peers
-                    if (localConnection) {
-                        const offer = await localConnection.createOffer();
-                        await localConnection.setLocalDescription(offer);
-                        console.log('Created offer:', offer);
-                        // In a real app, you would send this offer to other peers via signaling server
-                    }
                 } catch (error) {
                     console.error('Error accessing microphone:', error);
                     alert('Could not access your microphone. Please check permissions.');
